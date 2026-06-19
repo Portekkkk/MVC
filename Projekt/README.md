@@ -37,7 +37,7 @@ Interfejs użytkownika wykorzystuje następujące biblioteki zewnętrzne:
 Aplikacja jest gotowa do uruchomienia w środowisku deweloperskim. Aby zainicjować projekt lokalnie, należy wykonać następujące polecenia w terminalu:
 
 1. Pobranie repozytorium:
-   `git clone [link-do-twojego-repozytorium]`
+   `git clone https://github.com/Portekkkk/MVC/tree/de5f3dc72acd38f25e0da39dfa9d80b3b3ec59a1/Projekt`
 2. Instalacja środowiska:
    `pip install django`
 3. Inicjalizacja konta administratora (wymagane do zarządzania rekordami):
