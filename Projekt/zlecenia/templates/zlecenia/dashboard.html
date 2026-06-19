@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>3D Print Manager PRO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { border-radius: 12px; border: none; }
+        .card-header { border-radius: 12px 12px 0 0 !important; font-weight: bold; }
+        .table-hover tbody tr:hover { background-color: #f1f4f9; transition: 0.3s; }
+        .filament-box { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 10px;}
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark mb-4 shadow-sm">
+    <div class="container">
+        <span class="navbar-brand mb-0 h1"><i class="bi bi-printer-fill me-2"></i> 3D Print Manager PRO</span>
+        <a href="/admin" class="btn btn-outline-light btn-sm"><i class="bi bi-gear-fill me-1"></i> Panel Sterowania</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h4 class="mb-3"><i class="bi bi-box-seam me-2"></i>Stan Magazynowy Szpul</h4>
+            <div class="row">
+                {% for fil in filamenty %}
+                <div class="col-md-6">
+                    <div class="filament-box">
+                        <div class="d-flex justify-content-between mb-1">
+                            <strong>{{ fil.nazwa }} <span class="text-muted">({{ fil.get_kolor_display }})</span></strong>
+                            <span class="badge bg-secondary">{{ fil.waga_aktualna }}g / {{ fil.waga_poczatkowa }}g</span>
+                        </div>
+                        <div class="progress" style="height: 15px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated
+                                {% if fil.procent_zuzycia > 50 %}bg-success
+                                {% elif fil.procent_zuzycia > 20 %}bg-warning
+                                {% else %}bg-danger{% endif %}"
+                                role="progressbar" style="width: {{ fil.procent_zuzycia }}%;">
+                                {{ fil.procent_zuzycia }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12"><p class="text-muted">Brak filamentów w bazie. Dodaj szpule w panelu sterowania.</p></div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-gradient bg-primary text-white text-center">
+                    <i class="bi bi-pie-chart-fill me-2"></i>Status Maszyny
+                </div>
+                <div class="card-body d-flex justify-content-center align-items-center">
+                    <canvas id="myChart" style="max-height: 220px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-gradient bg-dark text-white">
+                    <i class="bi bi-list-task me-2"></i>Kolejka Wydruków (Wielokolorowych)
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Model</th>
+                                    <th>Materiał Główny</th>
+                                    <th>Materiał Dodatkowy (Wstawka)</th>
+                                    <th><i class="bi bi-clock"></i> Czas</th>
+                                    <th><i class="bi bi-cash-coin"></i> Koszt</th>
+                                    <th class="pe-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for zlecenie in zlecenia %}
+                                <tr>
+                                    <td class="ps-3 fw-bold">{{ zlecenie.nazwa_detalu }}</td>
+                                    <td>
+                                        <span class="badge border border-dark text-dark bg-light">
+                                            <i class="bi bi-circle-fill me-1" style="color: {{ zlecenie.filament_glowny.kolor }}; text-shadow: 0px 0px 2px rgba(0,0,0,0.5);"></i>
+                                            {{ zlecenie.filament_glowny.nazwa }}: {{ zlecenie.zuzycie_glowny_g }}g
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if zlecenie.filament_dodatkowy %}
+                                        <span class="badge border border-dark text-dark bg-light">
+                                            <i class="bi bi-circle-fill me-1" style="color: {{ zlecenie.filament_dodatkowy.kolor }}; text-shadow: 0px 0px 2px rgba(0,0,0,0.5);"></i>
+                                            {{ zlecenie.filament_dodatkowy.nazwa }}: {{ zlecenie.zuzycie_dodatkowy_g }}g
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted small">Brak (Jednokolorowy)</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ zlecenie.czas_druku_minuty }} min</td>
+                                    <td class="fw-bold text-success">{{ zlecenie.koszt_calkowity }} zł</td>
+                                    <td class="pe-3">
+                                        <span class="badge rounded-pill
+                                            {% if zlecenie.status == 'OCZEKUJACE' %}bg-secondary
+                                            {% elif zlecenie.status == 'W_TRAKCIE' %}bg-warning text-dark
+                                            {% elif zlecenie.status == 'ZAKONCZONE' %}bg-success
+                                            {% else %}bg-danger{% endif %} px-3 py-2">
+                                            {{ zlecenie.get_status_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">Brak zleceń w kolejce.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('myChart');
+    const daneZDjango = {{ dane_wykresu|safe }};
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Oczekujące', 'W trakcie', 'Zakończone'],
+            datasets: [{
+                data: daneZDjango,
+                backgroundColor: ['#6c757d', '#ffc107', '#198754'],
+                hoverOffset: 4,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { position: 'bottom' }
+            },
+            cutout: '70%'
+        }
+    });
+</script>
+
+</body>
+</html>
